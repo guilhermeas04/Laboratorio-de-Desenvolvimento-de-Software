@@ -37,11 +37,15 @@ public class TransacaoService {
 
     /**
      * Lista transações de um usuário específico
+     * Retorna todas as transações onde o usuário é o remetente OU o destinatário
      */
     public List<TransacaoResponseDTO> listarPorUsuario(Long usuarioId) {
         List<Transacao> transacoes = transacaoRepository.findAll();
         return transacoes.stream()
-                .filter(t -> t.getUsuario() != null && t.getUsuario().getId().equals(usuarioId))
+                .filter(t -> 
+                    (t.getUsuario() != null && t.getUsuario().getId().equals(usuarioId)) ||
+                    (t.getUsuarioDestino() != null && t.getUsuarioDestino().getId().equals(usuarioId))
+                )
                 .map(this::converterParaResponseDTO)
                 .collect(Collectors.toList());
     }

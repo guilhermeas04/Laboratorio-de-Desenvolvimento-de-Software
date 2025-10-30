@@ -1,31 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { alunosAPI } from '../lib/api'
+import { alunosAPI, transacoesAPI, TransacaoDTO, vantagensAPI, VantagemDTO } from '../lib/api'
 import { useAuth } from '../context/Auth'
 import { useToast } from '../hooks/use-toast'
-
-type Transaction = {
-  id: number
-  titulo: string
-  valor: number
-  autor?: string
-  data: string
-}
-
-type Vantagem = {
-  id: number
-  descricao: string
-  custoMoedas: number
-  foto?: string
-}
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { error } = useToast()
   const [aluno, setAluno] = useState<any>(null)
-  const [transacoes, setTransacoes] = useState<Transaction[]>([])
-  const [vantagens, setVantagens] = useState<Vantagem[]>([])
+  const [transacoes, setTransacoes] = useState<TransacaoDTO[]>([])
+  const [vantagens, setVantagens] = useState<VantagemDTO[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,23 +20,26 @@ export default function Dashboard() {
         if (user && user.id) {
           const a = await alunosAPI.buscarPorId(user.id)
           setAluno(a)
+
+          // Load real transactions
+          const txs = await transacoesAPI.listarPorAluno(user.id)
+          // Get last 5 transactions ordered by date
+          const recentTxs = txs
+            .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+            .slice(0, 5)
+          setTransacoes(recentTxs)
+
+          // Load real advantages
+          const vants = await vantagensAPI.listar()
+          // Get first 3 advantages
+          setVantagens(vants.slice(0, 3))
         } else {
           const alunos = await alunosAPI.listar()
           if (alunos.length > 0) setAluno(alunos[0])
         }
-
-        // Sample placeholders for UX while backend endpoints are not ready
-        setTransacoes([
-          { id: 1, titulo: 'Reconhecimento: Projeto X', valor: 250, autor: 'Prof. João', data: '2025-10-12' },
-          { id: 2, titulo: 'Resgate: Curso Online', valor: -300, data: '2025-10-03' },
-        ])
-
-        setVantagens([
-          { id: 1, descricao: 'Curso Online - 20% off', custoMoedas: 500, foto: '' },
-          { id: 2, descricao: 'Vale-livro R$50', custoMoedas: 150, foto: '' },
-        ])
       } catch (err) {
         error('Erro ao carregar dados do dashboard')
+        console.error(err)
       } finally {
         setLoading(false)
       }
@@ -63,8 +51,16 @@ export default function Dashboard() {
   if (!aluno) return <div className="text-center py-8">Nenhum aluno encontrado</div>
 
   const saldoTotal = aluno.saldoMoedas || 0
-  const resgatadas = transacoes.filter(t => t.valor < 0).reduce((a, b) => a + Math.abs(b.valor), 0)
-  const recebidas = transacoes.filter(t => t.valor > 0).reduce((a, b) => a + b.valor, 0)
+  
+  // Calculate received: when user is the DESTINATION (usuarioDestinoId)
+  const recebidas = transacoes
+    .filter(t => user?.id === t.usuarioDestinoId)
+    .reduce((a, b) => a + Math.abs(b.valor), 0)
+  
+  // Calculate spent: when user is the SENDER (usuarioId)
+  const resgatadas = transacoes
+    .filter(t => user?.id === t.usuarioId)
+    .reduce((a, b) => a + Math.abs(b.valor), 0)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,20 +123,36 @@ export default function Dashboard() {
             {transacoes.length === 0 ? (
               <div className="py-6 text-center text-slate-500">Nenhuma transação encontrada</div>
             ) : (
-              transacoes.map((t) => (
-                <div key={t.id} className="py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">{t.titulo.charAt(0)}</div>
-                    <div>
-                      <div className="font-medium">{t.titulo}</div>
-                      <div className="text-sm text-slate-500">{t.autor || t.data}</div>
+              transacoes.map((t) => {
+                // Se o aluno logado é o destinatário, ele RECEBEU (positivo/verde)
+                // Se o aluno logado é o remetente, ele GASTOU (negativo/vermelho)
+                const isDestinario = user?.id === t.usuarioDestinoId
+                const isPositive = isDestinario
+                const displayValue = isPositive ? Math.abs(t.valor) : -Math.abs(t.valor)
+                const titulo = isPositive
+                  ? `Recebido de ${t.usuarioNome || 'Professor'}` 
+                  : 'Resgate de vantagem'
+                const subtitulo = t.motivo || new Date(t.data).toLocaleDateString('pt-BR')
+                
+                return (
+                  <div key={t.id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-md flex items-center justify-center text-white ${
+                        isPositive ? 'bg-green-500' : 'bg-red-500'
+                      }`}>
+                        {isPositive ? '+' : '-'}
+                      </div>
+                      <div>
+                        <div className="font-medium">{titulo}</div>
+                        <div className="text-sm text-slate-500">{subtitulo}</div>
+                      </div>
+                    </div>
+                    <div className={`font-medium ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {displayValue >= 0 ? `+${displayValue}` : displayValue}
                     </div>
                   </div>
-                  <div className={`font-medium ${t.valor >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {t.valor >= 0 ? `+${t.valor}` : `${t.valor}`}
-                  </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
