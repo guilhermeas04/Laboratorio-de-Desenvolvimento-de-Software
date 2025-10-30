@@ -17,7 +17,7 @@ public class Transacao {
     private Usuario usuario;
 
     @ManyToOne
-    private EmpresaParceira empresa;
+    private Usuario usuarioDestino;
 
     private Date data;
     private double valor;
@@ -26,9 +26,9 @@ public class Transacao {
 
     public Transacao() {}
 
-    public Transacao(Usuario usuario, EmpresaParceira empresa, Date data, double valor, String tipo, String motivo) {
+    public Transacao(Usuario usuario, Usuario usuarioDestino, Date data, double valor, String tipo, String motivo) {
         this.usuario = usuario;
-        this.empresa = empresa;
+        this.usuarioDestino = usuarioDestino;
         this.data = data;
         this.valor = valor;
         this.tipo = tipo;
@@ -41,8 +41,8 @@ public class Transacao {
     public Usuario getUsuario() { return usuario; }
     public void setUsuario(Usuario usuario) { this.usuario = usuario; }
 
-    public EmpresaParceira getEmpresa() { return empresa; }
-    public void setEmpresa(EmpresaParceira empresa) { this.empresa = empresa; }
+    public Usuario getUsuarioDestino() { return usuarioDestino; }
+    public void setUsuarioDestino(Usuario usuarioDestino) { this.usuarioDestino = usuarioDestino; }
 
     public Date getData() { return data; }
     public void setData(Date data) { this.data = data; }

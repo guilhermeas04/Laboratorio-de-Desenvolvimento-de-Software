@@ -7,24 +7,24 @@ public class TransacaoResponseDTO {
       private Long id;
       private Long usuarioId;
       private String usuarioNome;
-      private Long empresaId;
-      private String empresaNome;
+      private Long usuarioDestinoId;
+      private String usuarioDestinoNome;
       private Date data;
       private double valor;
-      private String tipo; // "ENVIO", "RESGATE", "CREDITO"
+      private String tipo; // "ENVIO", "RESGATE", "CREDITO", "TRANSFERENCIA_PROFESSOR_ALUNO"
       private String motivo;
 
       // Constructors
       public TransacaoResponseDTO() {
       }
 
-      public TransacaoResponseDTO(Long id, Long usuarioId, String usuarioNome, Long empresaId,
-                  String empresaNome, Date data, double valor, String tipo, String motivo) {
+      public TransacaoResponseDTO(Long id, Long usuarioId, String usuarioNome, Long usuarioDestinoId,
+                  String usuarioDestinoNome, Date data, double valor, String tipo, String motivo) {
             this.id = id;
             this.usuarioId = usuarioId;
             this.usuarioNome = usuarioNome;
-            this.empresaId = empresaId;
-            this.empresaNome = empresaNome;
+            this.usuarioDestinoId = usuarioDestinoId;
+            this.usuarioDestinoNome = usuarioDestinoNome;
             this.data = data;
             this.valor = valor;
             this.tipo = tipo;
@@ -56,20 +56,20 @@ public class TransacaoResponseDTO {
             this.usuarioNome = usuarioNome;
       }
 
-      public Long getEmpresaId() {
-            return empresaId;
+      public Long getUsuarioDestinoId() {
+            return usuarioDestinoId;
       }
 
-      public void setEmpresaId(Long empresaId) {
-            this.empresaId = empresaId;
+      public void setUsuarioDestinoId(Long usuarioDestinoId) {
+            this.usuarioDestinoId = usuarioDestinoId;
       }
 
-      public String getEmpresaNome() {
-            return empresaNome;
+      public String getUsuarioDestinoNome() {
+            return usuarioDestinoNome;
       }
 
-      public void setEmpresaNome(String empresaNome) {
-            this.empresaNome = empresaNome;
+      public void setUsuarioDestinoNome(String usuarioDestinoNome) {
+            this.usuarioDestinoNome = usuarioDestinoNome;
       }
 
       public Date getData() {

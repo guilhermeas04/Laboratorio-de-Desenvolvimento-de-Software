@@ -74,11 +74,10 @@ public class ProfessorService {
         alunoRepository.save(aluno);
 
         // 6. Criar registro de transação
-        // Nota: Como Transacao tem empresa obrigatório no construtor, vamos passar null
-        // O ideal seria modificar o modelo para aceitar empresa opcional
+        // Professor é o remetente (usuario), Aluno é o destinatário (usuarioDestino)
         Transacao transacao = new Transacao(
-            professor,              // usuario (remetente)
-            null,                   // empresa (null para transferências entre usuários)
+            professor,              // usuario (remetente - professor)
+            aluno,                  // usuarioDestino (destinatário - aluno)
             new Date(),             // data
             request.getQuantidade(), // valor
             "TRANSFERENCIA_PROFESSOR_ALUNO", // tipo

@@ -89,11 +89,11 @@ export type TransacaoDTO = {
   id?: number
   usuarioId: number
   usuarioNome?: string
-  empresaId?: number
-  empresaNome?: string
+  usuarioDestinoId?: number
+  usuarioDestinoNome?: string
   data: string
   valor: number
-  tipo: 'ENVIO' | 'RESGATE' | 'CREDITO'
+  tipo: 'ENVIO' | 'RESGATE' | 'CREDITO' | 'TRANSFERENCIA_PROFESSOR_ALUNO'
   motivo: string
 }
 
@@ -349,7 +349,7 @@ export const transacoesAPI = {
     return apiCall<TransacaoDTO[]>(`/api/transacoes/empresa/${empresaId}`)
   },
 
-  async listarPorTipo(tipo: 'ENVIO' | 'RESGATE' | 'CREDITO'): Promise<TransacaoDTO[]> {
+  async listarPorTipo(tipo: 'ENVIO' | 'RESGATE' | 'CREDITO' | 'TRANSFERENCIA_PROFESSOR_ALUNO'): Promise<TransacaoDTO[]> {
     return apiCall<TransacaoDTO[]>(`/api/transacoes/tipo/${tipo}`)
   },
 }
