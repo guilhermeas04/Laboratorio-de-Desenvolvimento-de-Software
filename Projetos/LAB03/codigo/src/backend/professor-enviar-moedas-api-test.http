@@ -1,0 +1,167 @@
+### Testes da API de Envio de Moedas (Professor -> Aluno)
+### Porta: 8080
+
+#####################################
+### 1. Enviar Moedas para Aluno
+#####################################
+
+### Caso de Sucesso: Professor envia 50 moedas para aluno
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 50.0,
+  "motivo": "Excelente participação na aula de hoje! Suas contribuições foram muito relevantes."
+}
+
+### Caso 2: Professor envia 100 moedas para outro aluno
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 3,
+  "quantidade": 100.0,
+  "motivo": "Projeto final excepcional! Demonstrou domínio completo do conteúdo."
+}
+
+### Caso 3: Transferência pequena
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 10.0,
+  "motivo": "Boa resposta em sala de aula"
+}
+
+#####################################
+### 2. Testes de Validação (Devem Falhar)
+#####################################
+
+### ERRO: Quantidade negativa
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": -50.0,
+  "motivo": "Teste de validação"
+}
+
+### ERRO: Quantidade zero
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 0,
+  "motivo": "Teste de validação"
+}
+
+### ERRO: Motivo vazio
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 50.0,
+  "motivo": ""
+}
+
+### ERRO: Sem motivo
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 50.0
+}
+
+### ERRO: Aluno inexistente
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 99999,
+  "quantidade": 50.0,
+  "motivo": "Teste de aluno inexistente"
+}
+
+### ERRO: Professor inexistente
+POST http://localhost:8080/api/professores/99999/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 50.0,
+  "motivo": "Teste de professor inexistente"
+}
+
+### ERRO: Saldo insuficiente (tentar enviar mais do que o professor tem)
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 999999.0,
+  "motivo": "Teste de saldo insuficiente"
+}
+
+#####################################
+### 3. Adicionar Moedas ao Professor (Distribuição Semestral)
+#####################################
+
+### Adicionar 1000 moedas ao professor (distribuição semestral)
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=1000
+
+### Adicionar 500 moedas (caso especial)
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=500
+
+### ERRO: Quantidade negativa
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=-100
+
+### ERRO: Quantidade zero
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=0
+
+#####################################
+### 4. Consultar Alunos (verificar saldo atualizado)
+#####################################
+
+### Listar todos os alunos
+GET http://localhost:8080/api/alunos
+
+### Buscar aluno específico por ID
+GET http://localhost:8080/api/alunos/2
+
+### Buscar aluno específico por ID
+GET http://localhost:8080/api/alunos/3
+
+#####################################
+### Observações:
+#####################################
+
+# 1. Regras de Negócio:
+#    - Professores recebem 1000 moedas por semestre (acumulativo)
+#    - Professores podem enviar moedas para alunos com saldo suficiente
+#    - Quantidade deve ser positiva
+#    - Motivo é OBRIGATÓRIO
+#    - Aluno é notificado por email (atualmente via log)
+#    - Todas as transações são registradas no banco
+
+# 2. Fluxo de Teste Sugerido:
+#    a) Adicionar 1000 moedas ao professor (distribuição semestral)
+#    b) Enviar 50 moedas para aluno ID 2
+#    c) Consultar aluno ID 2 para verificar novo saldo
+#    d) Verificar logs para ver "email" enviado
+#    e) Tentar enviar mais do que o saldo permite (deve falhar)
+
+# 3. Antes de testar, certifique-se de que:
+#    - O banco de dados está rodando (PostgreSQL na porta 5432)
+#    - A aplicação Spring Boot está rodando (porta 8080)
+#    - Existem registros de professores e alunos no banco
+#    - Use o DataLoader ou crie registros manualmente
+
+# 4. Para criar um professor via SQL (se necessário):
+#    INSERT INTO usuario (usuario_tipo, nome, email, login, senha, documento, departamento, saldo_moedas, instituicao_id)
+#    VALUES ('Professor', 'Dr. João Silva', 'joao.silva@prof.edu', 'joao.silva', 'senha123', '12345678900', 'Ciência da Computação', 0, 1);

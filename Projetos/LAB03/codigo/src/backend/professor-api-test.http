@@ -1,0 +1,335 @@
+### Testes da API de Professores (CRUD Completo)
+### Porta: 8080
+
+#####################################
+### 1. LISTAR TODOS OS PROFESSORES
+#####################################
+
+### Listar todos os professores
+GET http://localhost:8080/api/professores
+Content-Type: application/json
+
+#####################################
+### 2. BUSCAR PROFESSOR POR ID
+#####################################
+
+### Buscar professor por ID (ID 1)
+GET http://localhost:8080/api/professores/1
+Content-Type: application/json
+
+### Buscar professor por ID (ID 2)
+GET http://localhost:8080/api/professores/2
+Content-Type: application/json
+
+### ERRO: Professor inexistente
+GET http://localhost:8080/api/professores/999
+Content-Type: application/json
+
+#####################################
+### 3. CRIAR NOVO PROFESSOR
+#####################################
+
+### Criar professor - Dr. João Silva
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Dr. João Silva",
+  "documento": "12345678900",
+  "email": "joao.silva@prof.edu",
+  "login": "joao.silva",
+  "senha": "senha123",
+  "departamento": "Ciência da Computação",
+  "instituicaoId": 1
+}
+
+### Criar professor - Dra. Maria Santos
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Dra. Maria Santos",
+  "documento": "98765432100",
+  "email": "maria.santos@prof.edu",
+  "login": "maria.santos",
+  "senha": "senha456",
+  "departamento": "Engenharia de Software",
+  "instituicaoId": 1
+}
+
+### Criar professor - Dr. Pedro Costa
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Dr. Pedro Costa",
+  "documento": "11122233344",
+  "email": "pedro.costa@prof.edu",
+  "login": "pedro.costa",
+  "senha": "senha789",
+  "departamento": "Sistemas de Informação",
+  "instituicaoId": 2
+}
+
+#####################################
+### 4. VALIDAÇÕES (Devem Falhar)
+#####################################
+
+### ERRO: Email já cadastrado
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Outro Professor",
+  "documento": "99988877766",
+  "email": "joao.silva@prof.edu",
+  "login": "outro.login",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 1
+}
+
+### ERRO: Login já cadastrado
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Outro Professor",
+  "documento": "99988877766",
+  "email": "outro@prof.edu",
+  "login": "joao.silva",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 1
+}
+
+### ERRO: Documento já cadastrado
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Outro Professor",
+  "documento": "12345678900",
+  "email": "outro@prof.edu",
+  "login": "outro.login",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 1
+}
+
+### ERRO: Nome vazio
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "",
+  "documento": "99988877766",
+  "email": "teste@prof.edu",
+  "login": "teste.login",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 1
+}
+
+### ERRO: Email inválido
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Teste Professor",
+  "documento": "99988877766",
+  "email": "email-invalido",
+  "login": "teste.login",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 1
+}
+
+### ERRO: Instituição não encontrada
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Teste Professor",
+  "documento": "99988877766",
+  "email": "teste@prof.edu",
+  "login": "teste.login",
+  "senha": "senha999",
+  "departamento": "Matemática",
+  "instituicaoId": 999
+}
+
+### ERRO: Campos obrigatórios ausentes
+POST http://localhost:8080/api/professores
+Content-Type: application/json
+
+{
+  "nome": "Teste Professor"
+}
+
+#####################################
+### 5. ATUALIZAR PROFESSOR
+#####################################
+
+### Atualizar professor ID 1 (todos os campos)
+PUT http://localhost:8080/api/professores/1
+Content-Type: application/json
+
+{
+  "nome": "Dr. João Silva (Atualizado)",
+  "documento": "12345678900",
+  "email": "joao.silva.novo@prof.edu",
+  "login": "joao.silva.new",
+  "senha": "novaSenha123",
+  "departamento": "Ciência da Computação e IA",
+  "instituicaoId": 1
+}
+
+### Atualizar professor ID 2 - Mudar departamento
+PUT http://localhost:8080/api/professores/2
+Content-Type: application/json
+
+{
+  "nome": "Dra. Maria Santos",
+  "documento": "98765432100",
+  "email": "maria.santos@prof.edu",
+  "login": "maria.santos",
+  "senha": "senha456",
+  "departamento": "Arquitetura de Software",
+  "instituicaoId": 1
+}
+
+### ERRO: Atualizar com email já usado por outro professor
+PUT http://localhost:8080/api/professores/2
+Content-Type: application/json
+
+{
+  "nome": "Dra. Maria Santos",
+  "documento": "98765432100",
+  "email": "joao.silva@prof.edu",
+  "login": "maria.santos",
+  "senha": "senha456",
+  "departamento": "Engenharia de Software",
+  "instituicaoId": 1
+}
+
+### ERRO: Atualizar professor inexistente
+PUT http://localhost:8080/api/professores/999
+Content-Type: application/json
+
+{
+  "nome": "Professor Inexistente",
+  "documento": "11111111111",
+  "email": "inexistente@prof.edu",
+  "login": "inexistente",
+  "senha": "senha999",
+  "departamento": "Departamento",
+  "instituicaoId": 1
+}
+
+#####################################
+### 6. DELETAR PROFESSOR
+#####################################
+
+### Deletar professor ID 3
+DELETE http://localhost:8080/api/professores/3
+Content-Type: application/json
+
+### ERRO: Deletar professor inexistente
+DELETE http://localhost:8080/api/professores/999
+Content-Type: application/json
+
+#####################################
+### 7. OPERAÇÕES COM MOEDAS
+#####################################
+
+### Adicionar 1000 moedas ao professor (distribuição semestral)
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=1000
+
+### Adicionar 500 moedas
+PATCH http://localhost:8080/api/professores/1/adicionar-moedas?quantidade=500
+
+### Enviar 50 moedas para aluno ID 1
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 1,
+  "quantidade": 50.0,
+  "motivo": "Excelente participação na aula de Engenharia de Software!"
+}
+
+### Enviar 100 moedas para aluno ID 2
+POST http://localhost:8080/api/professores/1/enviar-moedas
+Content-Type: application/json
+
+{
+  "alunoId": 2,
+  "quantidade": 100.0,
+  "motivo": "Projeto final excepcional!"
+}
+
+#####################################
+### 8. FLUXO COMPLETO DE TESTE
+#####################################
+
+### 1. Criar professor
+# POST /api/professores (veja seção 3)
+
+### 2. Listar todos e anotar ID criado
+# GET /api/professores
+
+### 3. Buscar por ID específico
+# GET /api/professores/{id}
+
+### 4. Adicionar 1000 moedas (distribuição semestral)
+# PATCH /api/professores/{id}/adicionar-moedas?quantidade=1000
+
+### 5. Atualizar dados do professor
+# PUT /api/professores/{id}
+
+### 6. Enviar moedas para aluno
+# POST /api/professores/{id}/enviar-moedas
+
+### 7. Buscar novamente para ver saldo atualizado
+# GET /api/professores/{id}
+
+### 8. Deletar professor (opcional)
+# DELETE /api/professores/{id}
+
+#####################################
+### Observações:
+#####################################
+
+# 1. Validações Implementadas:
+#    - Nome, documento, email, login, senha e departamento são obrigatórios
+#    - Email deve ser válido
+#    - Email, login e documento não podem ser duplicados
+#    - Instituição deve existir
+
+# 2. Regras de Negócio:
+#    - Professores são criados com saldo inicial 0
+#    - Saldo de moedas é acumulativo (não expira)
+#    - Professores recebem 1000 moedas por semestre
+#    - Podem enviar moedas para alunos
+
+# 3. Respostas:
+#    - POST: 201 Created + dados do professor criado
+#    - GET: 200 OK + dados do(s) professor(es)
+#    - PUT: 200 OK + dados atualizados
+#    - DELETE: 204 No Content (sem corpo)
+#    - PATCH: 200 OK + mensagem de sucesso
+
+# 4. Campos Retornados (ProfessorResponseDTO):
+#    - id, nome, documento, email, login
+#    - departamento, saldoMoedas
+#    - instituicaoId, instituicaoNome
+
+# 5. Senha:
+#    - Atualmente em texto puro
+#    - Em produção: usar BCrypt para hash
+
+# 6. Antes de testar:
+#    - Banco de dados rodando
+#    - Aplicação Spring Boot iniciada (mvn spring-boot:run)
+#    - Dados de exemplo carregados (DataLoader)
