@@ -2,52 +2,38 @@ import PageHeader from '../components/PageHeader'
 import { useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { useToast } from '../hooks/use-toast'
-import { vantagensAPI, VantagemDTO } from '../lib/api'
-import { useAuth } from '../context/Auth'
+
+type Vantagem = {
+  id: number
+  descricao: string
+  custoMoedas: number
+  foto?: string
+}
 
 export default function Vantagens() {
   const navigate = useNavigate()
-  const { error, success } = useToast()
-  const { user } = useAuth()
-  const [vantagens, setVantagens] = useState<VantagemDTO[]>([])
+  const { error } = useToast()
+  const [vantagens, setVantagens] = useState<Vantagem[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
 
   useEffect(() => {
+    async function loadVantagens() {
+      try {
+        // Placeholder sample data until backend is available
+        setVantagens([
+          { id: 1, descricao: 'Curso Online - 20% off', custoMoedas: 500, foto: '' },
+          { id: 2, descricao: 'Vale-livro R$50', custoMoedas: 150, foto: '' },
+          { id: 3, descricao: 'Assinatura Premium 1 mês', custoMoedas: 1200, foto: '' },
+        ])
+      } catch (err) {
+        error('Erro ao carregar vantagens')
+      } finally {
+        setLoading(false)
+      }
+    }
     loadVantagens()
-  }, [])
-
-  async function loadVantagens() {
-    try {
-      setLoading(true)
-      const data = await vantagensAPI.listar()
-      setVantagens(data)
-    } catch (err) {
-      error('Erro ao carregar vantagens')
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleResgatar(vantagemId: number, custoMoedas: number) {
-    if (!user || user.role !== 'aluno') {
-      error('Apenas alunos podem resgatar vantagens')
-      return
-    }
-
-    if (!confirm(`Deseja resgatar esta vantagem por ${custoMoedas} moedas?`)) {
-      return
-    }
-
-    try {
-      await vantagensAPI.resgatar(vantagemId, user.id)
-      success('Vantagem resgatada com sucesso!')
-      loadVantagens() // Reload to update
-    } catch (err: any) {
-      error(err.message || 'Erro ao resgatar vantagem')
-    }
-  }
+  }, [error])
 
   if (loading) return <div className="text-center py-8">Carregando...</div>
 
@@ -68,27 +54,17 @@ export default function Vantagens() {
         ) : (
           filtered.map(v => (
             <div key={v.id} className="card overflow-hidden">
-              <div className="h-40 bg-gradient-to-br from-white to-slate-100 flex items-center justify-center text-slate-400">
-                {v.foto ? <img src={v.foto} alt={v.descricao} className="w-full h-full object-cover" /> : 'Imagem'}
-              </div>
+              <div className="h-40 bg-gradient-to-br from-white to-slate-100 flex items-center justify-center text-slate-400">{v.foto ? <img src={v.foto} alt={v.descricao} className="w-full h-full object-cover" /> : 'Imagem'}</div>
               <div className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <div className="font-medium">{v.descricao}</div>
                     <div className="text-sm text-slate-500">{v.custoMoedas} moedas</div>
-                    {v.empresaNome && <div className="text-xs text-slate-400 mt-1">{v.empresaNome}</div>}
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <button className="btn flex-1" onClick={() => navigate(`/vantagens/${v.id}`)}>Ver detalhes</button>
-                  {user?.role === 'aluno' && (
-                    <button
-                      className="btn bg-sky-600 text-white flex-1"
-                      onClick={() => handleResgatar(v.id!, v.custoMoedas)}
-                    >
-                      Resgatar
-                    </button>
-                  )}
+                  <button className="btn" onClick={() => navigate(`/vantagens/${v.id}`)}>Ver detalhes</button>
+                  <button className="btn bg-sky-600 text-white" onClick={() => {/* redeem flow */}}>Resgatar</button>
                 </div>
               </div>
             </div>
