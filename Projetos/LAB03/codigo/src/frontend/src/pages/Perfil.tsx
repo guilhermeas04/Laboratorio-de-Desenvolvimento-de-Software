@@ -18,7 +18,8 @@ export default function Perfil() {
   const [curso, setCurso] = useState('')
   const [instituicao, setInstituicao] = useState('')
   const [instituicaoId, setInstituicaoId] = useState<number>(1)
-  
+  const [senhaNova, setSenhaNova] = useState('')
+
 
   useEffect(() => {
     async function load() {
@@ -60,8 +61,16 @@ export default function Perfil() {
         instituicaoId: instituicaoId,
       }
 
+      // Adicionar senha apenas se foi fornecida
+      if (senhaNova) {
+        payload.senha = senhaNova
+      }
+
       await alunosAPI.atualizar(user.id, payload)
       success('Perfil atualizado com sucesso')
+
+      // Limpar campo de senha após sucesso
+      setSenhaNova('')
     } catch (err: any) {
       error(err.message || 'Falha ao atualizar perfil')
     } finally {

@@ -1,57 +1,48 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { alunosAPI } from '../lib/api'
+import { alunosAPI, vantagensAPI, transacoesAPI, VantagemDTO, TransacaoDTO } from '../lib/api'
 import { useAuth } from '../context/Auth'
 import { useToast } from '../hooks/use-toast'
-
-type Transaction = {
-  id: number
-  titulo: string
-  valor: number
-  autor?: string
-  data: string
-}
-
-type Vantagem = {
-  id: number
-  descricao: string
-  custoMoedas: number
-  foto?: string
-}
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { error } = useToast()
   const [aluno, setAluno] = useState<any>(null)
-  const [transacoes, setTransacoes] = useState<Transaction[]>([])
-  const [vantagens, setVantagens] = useState<Vantagem[]>([])
+  const [transacoes, setTransacoes] = useState<TransacaoDTO[]>([])
+  const [vantagens, setVantagens] = useState<VantagemDTO[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
       try {
-        // Prefer authenticated user if available
+        // Carregar dados do aluno
         if (user && user.id) {
           const a = await alunosAPI.buscarPorId(user.id)
           setAluno(a)
+
+          // Carregar transações do aluno
+          const txs = await transacoesAPI.listarPorAluno(user.id)
+          setTransacoes(Array.isArray(txs) ? txs : [])
         } else {
           const alunos = await alunosAPI.listar()
-          if (alunos.length > 0) setAluno(alunos[0])
+          if (alunos.length > 0) {
+            setAluno(alunos[0])
+            if (alunos[0].id) {
+              const txs = await transacoesAPI.listarPorAluno(alunos[0].id)
+              setTransacoes(Array.isArray(txs) ? txs : [])
+            }
+          }
         }
 
-        // Sample placeholders for UX while backend endpoints are not ready
-        setTransacoes([
-          { id: 1, titulo: 'Reconhecimento: Projeto X', valor: 250, autor: 'Prof. João', data: '2025-10-12' },
-          { id: 2, titulo: 'Resgate: Curso Online', valor: -300, data: '2025-10-03' },
-        ])
-
-        setVantagens([
-          { id: 1, descricao: 'Curso Online - 20% off', custoMoedas: 500, foto: '' },
-          { id: 2, descricao: 'Vale-livro R$50', custoMoedas: 150, foto: '' },
-        ])
+        // Carregar vantagens em destaque (limitadas)
+        const allVantagens = await vantagensAPI.listar()
+        setVantagens(Array.isArray(allVantagens) ? allVantagens.slice(0, 3) : [])
       } catch (err) {
         error('Erro ao carregar dados do dashboard')
+        console.error(err)
+        setTransacoes([])
+        setVantagens([])
       } finally {
         setLoading(false)
       }
@@ -63,8 +54,8 @@ export default function Dashboard() {
   if (!aluno) return <div className="text-center py-8">Nenhum aluno encontrado</div>
 
   const saldoTotal = aluno.saldoMoedas || 0
-  const resgatadas = transacoes.filter(t => t.valor < 0).reduce((a, b) => a + Math.abs(b.valor), 0)
-  const recebidas = transacoes.filter(t => t.valor > 0).reduce((a, b) => a + b.valor, 0)
+  const resgatadas = transacoes.filter(t => t.tipo === 'RESGATE').reduce((a, b) => a + b.valor, 0)
+  const recebidas = transacoes.filter(t => t.tipo === 'ENVIO').reduce((a, b) => a + b.valor, 0)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,20 +118,26 @@ export default function Dashboard() {
             {transacoes.length === 0 ? (
               <div className="py-6 text-center text-slate-500">Nenhuma transação encontrada</div>
             ) : (
-              transacoes.map((t) => (
-                <div key={t.id} className="py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">{t.titulo.charAt(0)}</div>
-                    <div>
-                      <div className="font-medium">{t.titulo}</div>
-                      <div className="text-sm text-slate-500">{t.autor || t.data}</div>
+              transacoes.slice(0, 5).map((t) => {
+                const isNegative = t.tipo === 'RESGATE'
+                const dataFormatada = new Date(t.data).toLocaleDateString('pt-BR')
+                return (
+                  <div key={t.id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-md bg-slate-100 flex items-center justify-center text-slate-500">
+                        {t.motivo.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-medium">{t.motivo}</div>
+                        <div className="text-sm text-slate-500">{t.usuarioNome || dataFormatada}</div>
+                      </div>
+                    </div>
+                    <div className={`font-medium ${isNegative ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      {isNegative ? `-${t.valor}` : `+${t.valor}`}
                     </div>
                   </div>
-                  <div className={`font-medium ${t.valor >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {t.valor >= 0 ? `+${t.valor}` : `${t.valor}`}
-                  </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>
@@ -156,14 +153,16 @@ export default function Dashboard() {
             ) : (
               vantagens.map((v) => (
                 <div className="card overflow-hidden" key={v.id}>
-                  <div className="h-36 bg-gradient-to-br from-slate-100 to-white flex items-center justify-center text-slate-400">{v.foto ? <img src={v.foto} alt={v.descricao} className="w-full h-full object-cover" /> : 'Imagem'}</div>
+                  <div className="h-36 bg-gradient-to-br from-slate-100 to-white flex items-center justify-center text-slate-400">
+                    {v.foto ? <img src={v.foto} alt={v.descricao} className="w-full h-full object-cover" /> : 'Imagem'}
+                  </div>
                   <div className="p-4">
                     <div className="font-medium">{v.descricao}</div>
-                    <div className="text-sm text-slate-500 mb-3">{v.custoMoedas} moedas</div>
-                    <div className="flex gap-2">
-                      <button className="btn" onClick={() => navigate(`/vantagens/${v.id}`)}>Ver detalhes</button>
-                      <button className="btn bg-sky-600 text-white" onClick={() => {/* quick redeem could be added */}}>Resgatar</button>
-                    </div>
+                    <div className="text-sm text-slate-500 mb-2">{v.custoMoedas} moedas</div>
+                    {v.empresaNome && (
+                      <div className="text-xs text-slate-400 mb-3">{v.empresaNome}</div>
+                    )}
+                    <button className="btn w-full" onClick={() => navigate(`/vantagens/${v.id}`)}>Ver detalhes</button>
                   </div>
                 </div>
               ))
