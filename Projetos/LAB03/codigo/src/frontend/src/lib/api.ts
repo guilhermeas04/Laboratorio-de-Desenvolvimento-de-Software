@@ -66,6 +66,8 @@ export type VantagemDTO = {
   descricao: string
   foto?: string
   custoMoedas: number
+  empresaId?: number
+  empresaNome?: string
 }
 
 export type LoginRequestDTO = {
@@ -90,6 +92,37 @@ export type ProfessorDTO = {
   login: string
   senha?: string
   instituicaoId: number
+  saldoMoedas?: number
+}
+
+export type TransacaoDTO = {
+  id?: number
+  usuarioId: number
+  usuarioNome?: string
+  empresaId?: number
+  empresaNome?: string
+  data: string
+  valor: number
+  tipo: 'ENVIO' | 'RESGATE' | 'CREDITO'
+  motivo: string
+}
+
+export type EnviarMoedasRequest = {
+  alunoId: number
+  quantidade: number
+  motivo: string
+}
+
+export type EnviarMoedasResponse = {
+  professorId: number
+  professorNome: string
+  alunoId: number
+  alunoNome: string
+  quantidade: number
+  motivo: string
+  novoSaldoProfessor: number
+  novoSaldoAluno: number
+  transacaoId: number
 }
 
 // Auth API
@@ -251,8 +284,16 @@ export const empresasAPI = {
   },
 }
 
-// Professores API (stub)
+// Professores API
 export const professoresAPI = {
+  async listar(): Promise<ProfessorDTO[]> {
+    return apiCall<ProfessorDTO[]>('/api/professores')
+  },
+
+  async buscarPorId(id: number): Promise<ProfessorDTO> {
+    return apiCall<ProfessorDTO>(`/api/professores/${id}`)
+  },
+
   async criar(data: Omit<ProfessorDTO, 'id'>): Promise<ProfessorDTO> {
     try {
       return await apiCall<ProfessorDTO>('/api/professores', {
@@ -282,10 +323,57 @@ export const professoresAPI = {
       }
     }
   },
+
+  async atualizar(id: number, data: Partial<ProfessorDTO>): Promise<ProfessorDTO> {
+    return apiCall<ProfessorDTO>(`/api/professores/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+
+  async deletar(id: number): Promise<void> {
+    return apiCall<void>(`/api/professores/${id}`, {
+      method: 'DELETE',
+    })
+  },
+
+  async enviarMoedas(professorId: number, request: EnviarMoedasRequest): Promise<EnviarMoedasResponse> {
+    return apiCall<EnviarMoedasResponse>(`/api/professores/${professorId}/enviar-moedas`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    })
+  },
+
+  async adicionarMoedas(professorId: number, quantidade: number): Promise<string> {
+    return apiCall<string>(`/api/professores/${professorId}/adicionar-moedas?quantidade=${quantidade}`, {
+      method: 'PATCH',
+    })
+  },
 }
 
 // Vantagens API (empresa) - fallback to demoStore when backend is unavailable
 export const vantagensAPI = {
+  async listar(): Promise<VantagemDTO[]> {
+    try {
+      return await apiCall<VantagemDTO[]>('/api/vantagens')
+    } catch {
+      const { demoStore } = await import('./store')
+      const db = demoStore.getDB()
+      const all = db.advantages || []
+      return all.map((v: any, idx: number) => ({
+        id: v.id ?? idx + 1,
+        descricao: v.descricao || v.titulo || 'Vantagem',
+        foto: v.foto,
+        custoMoedas: v.custoMoedas ?? v.preco ?? 0,
+        empresaId: v.empresaId,
+      }))
+    }
+  },
+
+  async buscarPorId(id: number): Promise<VantagemDTO> {
+    return apiCall<VantagemDTO>(`/api/vantagens/${id}`)
+  },
+
   async listarPorEmpresa(empresaId: number): Promise<VantagemDTO[]> {
     try {
       return await apiCall<VantagemDTO[]>(`/api/empresas/${empresaId}/vantagens`)
@@ -318,6 +406,13 @@ export const vantagensAPI = {
     }
   },
 
+  async atualizar(id: number, data: Partial<VantagemDTO>): Promise<VantagemDTO> {
+    return apiCall<VantagemDTO>(`/api/vantagens/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+
   async deletar(id: number): Promise<void> {
     try {
       return await apiCall<void>(`/api/vantagens/${id}`, { method: 'DELETE' })
@@ -328,5 +423,38 @@ export const vantagensAPI = {
       localStorage.setItem('lab03-demo-db', JSON.stringify(db))
       return
     }
-  }
+  },
+
+  async resgatar(vantagemId: number, alunoId: number): Promise<TransacaoDTO> {
+    return apiCall<TransacaoDTO>(`/api/vantagens/${vantagemId}/resgatar?alunoId=${alunoId}`, {
+      method: 'POST',
+    })
+  },
+}
+
+// Transações API
+export const transacoesAPI = {
+  async listar(): Promise<TransacaoDTO[]> {
+    return apiCall<TransacaoDTO[]>('/api/transacoes')
+  },
+
+  async buscarPorId(id: number): Promise<TransacaoDTO> {
+    return apiCall<TransacaoDTO>(`/api/transacoes/${id}`)
+  },
+
+  async listarPorAluno(alunoId: number): Promise<TransacaoDTO[]> {
+    return apiCall<TransacaoDTO[]>(`/api/transacoes/aluno/${alunoId}`)
+  },
+
+  async listarPorProfessor(professorId: number): Promise<TransacaoDTO[]> {
+    return apiCall<TransacaoDTO[]>(`/api/transacoes/professor/${professorId}`)
+  },
+
+  async listarPorEmpresa(empresaId: number): Promise<TransacaoDTO[]> {
+    return apiCall<TransacaoDTO[]>(`/api/transacoes/empresa/${empresaId}`)
+  },
+
+  async listarPorTipo(tipo: 'ENVIO' | 'RESGATE' | 'CREDITO'): Promise<TransacaoDTO[]> {
+    return apiCall<TransacaoDTO[]>(`/api/transacoes/tipo/${tipo}`)
+  },
 }

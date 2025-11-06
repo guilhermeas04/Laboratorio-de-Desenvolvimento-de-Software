@@ -1,31 +1,26 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import { useState, useEffect } from 'react'
-import { alunosAPI } from '../lib/api'
+import { vantagensAPI, VantagemDTO } from '../lib/api'
 import { useAuth } from '../context/Auth'
 import { useToast } from '../hooks/use-toast'
-
-type Vantagem = {
-  id: number
-  descricao: string
-  custoMoedas: number
-  foto?: string
-}
 
 export default function VantagemDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { success, error, warning } = useToast()
-  const [vantagem, setVantagem] = useState<Vantagem | null>(null)
+  const [vantagem, setVantagem] = useState<VantagemDTO | null>(null)
   const [loading, setLoading] = useState(true)
+  const [resgatando, setResgatando] = useState(false)
 
   useEffect(() => {
     async function loadVantagem() {
+      if (!id) return
+      
       try {
-        // TODO: Load from backend when endpoint is available
-        // For now, return null
-        setVantagem(null)
+        const data = await vantagensAPI.buscarPorId(parseInt(id))
+        setVantagem(data)
       } catch (err) {
         error('Erro ao carregar detalhes da vantagem')
       } finally {
@@ -36,32 +31,24 @@ export default function VantagemDetalhe() {
   }, [id, error])
 
   async function handleRedeem() {
-    if (!vantagem) return
+    if (!vantagem || !user?.id) return
 
+    // Verificar se é aluno
+    if (user.role !== 'aluno') {
+      warning('Apenas alunos podem resgatar vantagens')
+      return
+    }
+
+    setResgatando(true)
     try {
-      // TODO: Get current student ID properly
-      const alunos = await alunosAPI.listar()
-      if (alunos.length === 0) {
-        warning('Nenhum aluno encontrado')
-        return
-      }
-
-      const aluno = alunos[0]
-
-      if (aluno.saldoMoedas < vantagem.custoMoedas) {
-        warning('Saldo insuficiente para resgatar esta vantagem')
-        return
-      }
-
-      // Debit coins
-      await alunosAPI.debitarMoedas(aluno.id!, vantagem.custoMoedas)
-
-      // TODO: Create transaction record when endpoint is available
-
-      success('Vantagem resgatada com sucesso!')
-      navigate('/dashboard')
-    } catch (err) {
-      error('Erro ao resgatar vantagem. Tente novamente.')
+      await vantagensAPI.resgatar(vantagem.id!, user.id)
+      success('Vantagem resgatada com sucesso! Você receberá instruções por e-mail.')
+      navigate('/transacoes')
+    } catch (err: any) {
+      const mensagem = err?.message || 'Erro ao resgatar vantagem. Verifique seu saldo.'
+      error(mensagem)
+    } finally {
+      setResgatando(false)
     }
   }
 
@@ -93,9 +80,22 @@ export default function VantagemDetalhe() {
               </div>
               <div>
                 <h3 className="text-2xl font-semibold mb-2">{vantagem.descricao}</h3>
-                <div className="text-slate-700 mb-4 text-lg">{vantagem.custoMoedas} moedas</div>
+                <div className="text-slate-700 mb-2 text-lg">{vantagem.custoMoedas} moedas</div>
+                {vantagem.empresaNome && (
+                  <div className="text-sm text-slate-500 mb-4">Oferecido por: {vantagem.empresaNome}</div>
+                )}
                 <div className="flex gap-2 mb-6">
-                  <button className="btn btn-lg" onClick={handleRedeem}>Resgatar</button>
+                  {user?.role === 'aluno' ? (
+                    <button 
+                      className="btn btn-lg" 
+                      onClick={handleRedeem}
+                      disabled={resgatando}
+                    >
+                      {resgatando ? 'Resgatando...' : 'Resgatar'}
+                    </button>
+                  ) : (
+                    <div className="text-sm text-slate-500 italic">Apenas alunos podem resgatar vantagens</div>
+                  )}
                   <Link to="/vantagens" className="btn bg-slate-200 text-slate-800 hover:bg-slate-300">Voltar</Link>
                 </div>
                 <div className="text-sm text-orange-700 bg-orange-100 p-3 rounded-md">
