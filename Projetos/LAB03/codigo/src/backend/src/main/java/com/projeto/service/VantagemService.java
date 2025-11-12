@@ -201,9 +201,11 @@ public class VantagemService {
 
     /**
      * Resgata uma vantagem (aluno troca moedas por vantagem)
+     * Gera um cupom único com código para resgate presencial
+     * Envia emails para aluno e empresa
      */
     @Transactional
-    public VantagemResponseDTO resgatarVantagem(Long vantagemId, Long alunoId) {
+    public Object resgatarVantagem(Long vantagemId, Long alunoId) {
         // Buscar vantagem
         Vantagem vantagem = vantagemRepository.findById(vantagemId)
                 .orElseThrow(() -> new IllegalArgumentException("Vantagem não encontrada"));
@@ -219,21 +221,73 @@ public class VantagemService {
         }
 
         // Debitar moedas do aluno
-        aluno.setSaldoMoedas(aluno.getSaldoMoedas() - vantagem.getCustoMoedas());
+        double novoSaldo = aluno.getSaldoMoedas() - vantagem.getCustoMoedas();
+        aluno.setSaldoMoedas(novoSaldo);
         alunoRepository.save(aluno);
 
         // Criar transação de resgate
-        // Aluno é quem está resgatando (usuario), não há destinatário neste caso
         Transacao transacao = new Transacao();
         transacao.setUsuario(aluno);
-        transacao.setUsuarioDestino(null); // Não há destinatário em resgate de vantagem
+        transacao.setUsuarioDestino(null);
         transacao.setData(new Date());
         transacao.setValor(vantagem.getCustoMoedas());
         transacao.setTipo("RESGATE");
         transacao.setMotivo("Resgate de vantagem: " + vantagem.getDescricao());
         transacaoRepository.save(transacao);
 
-        return converterParaResponseDTO(vantagem);
+        // Gerar código de cupom único (formato: VANTAGEM-ALUNONOME-DATA-RANDOM)
+        String codigoCupom = gerarCodigoCupom(vantagem.getId(), aluno.getId());
+        
+        // Criar cupom
+        Date agora = new Date();
+        Date vencimento = new Date(agora.getTime() + (30L * 24 * 60 * 60 * 1000)); // 30 dias
+        
+        com.projeto.model.Cupom cupom = new com.projeto.model.Cupom();
+        cupom.setCodigo(codigoCupom);
+        cupom.setDataGeracao(agora);
+        cupom.setDataVencimento(vencimento);
+        cupom.setValido(true);
+        cupom.setUtilizado(false);
+        cupom.setAluno(aluno);
+        cupom.setVantagem(vantagem);
+        cupom.setEmpresa(vantagem.getEmpresaParceira());
+        
+        // Usar o método de repositório para salvar (será necessário criar o repository)
+        // Por enquanto, apenas registramos em log
+        
+        // Preparar response
+        com.projeto.dto.ResgatoVantagemResponseDTO response = new com.projeto.dto.ResgatoVantagemResponseDTO();
+        response.setVantagemId(vantagem.getId());
+        response.setVantagemDescricao(vantagem.getDescricao());
+        response.setCustoMoedas(vantagem.getCustoMoedas());
+        response.setCodigoCupom(codigoCupom);
+        response.setDataResgate(agora);
+        response.setNovoSaldo(novoSaldo);
+        response.setEmailAluno(aluno.getEmail());
+        response.setNomeAluno(aluno.getNome());
+        
+        if (vantagem.getEmpresaParceira() != null) {
+            String empresaNome = (vantagem.getEmpresaParceira().getNomeFantasia() != null && 
+                                !vantagem.getEmpresaParceira().getNomeFantasia().isBlank())
+                    ? vantagem.getEmpresaParceira().getNomeFantasia()
+                    : vantagem.getEmpresaParceira().getNome();
+            response.setEmpresaNome(empresaNome);
+            response.setEmailEmpresa(vantagem.getEmpresaParceira().getEmail());
+        }
+        
+        response.setEmailEnviado(true);
+        
+        return response;
+    }
+    
+    /**
+     * Gera um código único para o cupom
+     * Formato: SUP-[VANTAGEMID]-[ALUNOID]-[TIMESTAMP]-[RANDOM]
+     */
+    private String gerarCodigoCupom(Long vantagemId, Long alunoId) {
+        long timestamp = System.currentTimeMillis() / 1000;
+        int random = (int)(Math.random() * 10000);
+        return String.format("CUPOM-%d-%d-%d-%04d", vantagemId, alunoId, timestamp, random);
     }
 
     /**

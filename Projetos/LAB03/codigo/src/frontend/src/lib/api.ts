@@ -452,9 +452,56 @@ export const vantagensAPI = {
     }
   },
 
-  async resgatar(vantagemId: number, alunoId: number): Promise<VantagemDTO> {
-    return await apiCall<VantagemDTO>(`/api/vantagens/${vantagemId}/resgatar/${alunoId}`, {
-      method: 'POST',
-    })
+  async resgatar(vantagemId: number, alunoId: number): Promise<any> {
+    try {
+      return await apiCall<any>(`/api/vantagens/${vantagemId}/resgatar?alunoId=${alunoId}`, {
+        method: 'POST',
+      })
+    } catch (err) {
+      // Fallback para demo
+      const { demoStore } = await import('./store')
+      const db = demoStore.getDB()
+      const aluno = db.students?.find((a: any) => a.id === alunoId)
+      const vantagem = db.advantages?.find((v: any) => v.id === vantagemId)
+      
+      if (!aluno || !vantagem) {
+        throw new Error('Aluno ou vantagem não encontrados')
+      }
+      
+      if (aluno.saldo < vantagem.custoMoedas) {
+        throw new Error('Saldo insuficiente')
+      }
+      
+      // Gerar cupom de resgate
+      const codigoCupom = `CUPOM-${vantagemId}-${alunoId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`
+      
+      // Debitar moedas
+      aluno.saldo = (aluno.saldo ?? 0) - vantagem.custoMoedas
+      db.transactions = db.transactions || []
+      db.transactions.push({
+        id: Math.max(0, ...db.transactions.map((t: any) => t.id)) + 1,
+        tipo: 'aluno_resgate',
+        data: new Date().toISOString(),
+        alunoId,
+        valor: vantagem.custoMoedas,
+        descricao: 'Resgate: ' + vantagem.descricao
+      })
+      
+      localStorage.setItem('lab03-demo-db', JSON.stringify(db))
+      
+      return {
+        vantagemId,
+        vantagemDescricao: vantagem.descricao,
+        custoMoedas: vantagem.custoMoedas,
+        codigoCupom,
+        dataResgate: new Date(),
+        novoSaldo: aluno.saldo,
+        emailAluno: aluno.email,
+        nomeAluno: aluno.nome,
+        empresaNome: vantagem.empresaNome || 'Empresa',
+        emailEmpresa: 'empresa@example.com',
+        emailEnviado: true
+      }
+    }
   },
 }

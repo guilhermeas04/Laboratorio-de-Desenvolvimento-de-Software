@@ -18,6 +18,7 @@ export default function Perfil() {
   const [curso, setCurso] = useState('')
   const [instituicao, setInstituicao] = useState('')
   const [instituicaoId, setInstituicaoId] = useState<number>(1)
+  const [senhaNova, setSenhaNova] = useState('')
   
 
   useEffect(() => {

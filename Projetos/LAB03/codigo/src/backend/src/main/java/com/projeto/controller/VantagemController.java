@@ -129,7 +129,7 @@ public class VantagemController {
        * 
        * @param vantagemId ID da vantagem a ser resgatada
        * @param alunoId    ID do aluno que está resgatando (query param)
-       * @return Detalhes da transação de resgate
+       * @return Detalhes do resgate incluindo cupom de resgate
        */
       @PostMapping("/{vantagemId}/resgatar")
       public ResponseEntity<?> resgatarVantagem(
