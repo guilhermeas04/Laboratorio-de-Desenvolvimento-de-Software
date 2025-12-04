@@ -10,8 +10,8 @@ COPY pom.xml .
 # Download dependencies - this layer will be cached unless pom.xml changes
 RUN mvn dependency:go-offline -B
 
-# Copy the source code
-COPY src ./src
+# Copy the full project (ensures /src exists in build context)
+COPY . .
 
 # Build the application
 RUN mvn clean package -DskipTests
