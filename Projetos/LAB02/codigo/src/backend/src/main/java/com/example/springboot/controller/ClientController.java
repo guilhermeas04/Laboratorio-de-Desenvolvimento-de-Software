@@ -20,7 +20,7 @@ import com.example.springboot.store.DataStore;
 
 @RestController
 @RequestMapping("/api/client")
-@CrossOrigin(origins = {"http://localhost:8080"})
+@CrossOrigin(origins = {"https://backstudentcoin.onrender.comw"})
 public class ClientController {
 
     @GetMapping("/pedidos")

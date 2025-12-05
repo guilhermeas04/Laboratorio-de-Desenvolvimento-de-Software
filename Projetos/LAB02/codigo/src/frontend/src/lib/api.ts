@@ -1,5 +1,5 @@
 // Detect backend base (backend dev profile usa 8080). Permite override por env.
-export const API_BASE = (import.meta.env.VITE_API_BASE as string) || "http://localhost:8081"; // porta ajustada para 8081
+export const API_BASE = (import.meta.env.VITE_API_BASE as string) || "https://backstudentcoin.onrender.comw"; // porta ajustada para 8081
 
 /* --------------------------------------------------
  * Helpers HTTP genéricos
@@ -310,5 +310,5 @@ export const apiPost = api.post;
 export const apiPut = api.put;
 export const apiDelete = api.delete;
 
-// Nota: Recomenda-se criar um arquivo .env.local com VITE_API_BASE=http://localhost:8080
+// Nota: Recomenda-se criar um arquivo .env.local com VITE_API_BASE=https://backstudentcoin.onrender.comw
 // para evitar divergência de portas entre ambientes.

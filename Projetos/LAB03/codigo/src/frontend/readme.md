@@ -20,7 +20,7 @@ npm run dev
 3. Variáveis de ambiente (opcional)
 Crie `.env` com a base da API se necessário:
 ```
-VITE_API_BASE=http://localhost:8080
+VITE_API_BASE=https://backstudentcoin.onrender.comw
 ```
 
 ## Scripts

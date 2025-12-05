@@ -65,7 +65,7 @@ Backend (Spring Boot)
 	 - ou empacote e rode o JAR:
 		 - `mvn -DskipTests package`
 		 - `java -jar target/demo-0.0.1-SNAPSHOT.jar`
-3. A API subirá em `http://localhost:8081` (porta configurável via `server.port`).
+3. A API subirá em `https://backstudentcoin.onrender.comw` (porta configurável via `server.port`).
 
 Frontend (Vite)
 1. Abra outro terminal na pasta do frontend:
@@ -73,13 +73,13 @@ Frontend (Vite)
 2. Instale dependências e rode:
 	 - `npm install`
 	 - Defina a URL da API (ex.: backend local):
-		 - PowerShell: `$env:VITE_API_BASE = "http://localhost:8081"`
+		 - PowerShell: `$env:VITE_API_BASE = "https://backstudentcoin.onrender.comw"`
 	 - `npm run dev`
 3. Acesse `http://localhost:5173`.
 
 Variáveis de ambiente úteis
 - Frontend
-	- `VITE_API_BASE` → URL base da API (ex.: `http://localhost:8081` ou URL do backend no Koyeb)
+	- `VITE_API_BASE` → URL base da API (ex.: `https://backstudentcoin.onrender.comw` ou URL do backend no Koyeb)
 - Backend
 	- `PORT` → porta que o servidor usa (Koyeb injeta automaticamente)
 	- Perfil Postgres (opcional): `SPRING_PROFILES_ACTIVE=postgres`
